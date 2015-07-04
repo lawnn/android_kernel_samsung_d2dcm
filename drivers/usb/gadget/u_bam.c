@@ -711,6 +711,8 @@ static void gbam2bam_connect_work(struct work_struct *w)
 	int ret;
 	unsigned long flags;
 
+	if (!port) return;
+
 	ret = usb_ep_enable(port->gr->in);
 	if (ret) {
 		pr_err("%s: usb_ep_enable failed eptype:IN ep:%p",

@@ -686,7 +686,7 @@ static int mipi_dsi_liquid_panel_power(int on)
 
 static void active_reset_ldi(void)
 {
-
+#if !defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
 	int gpio43 = PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_LCD_RST);
 	pr_info("Active Reset: Resettig LCD 1...0..1\n");
 	gpio_direction_output(gpio43, 1);
@@ -713,6 +713,7 @@ static void active_reset_ldi(void)
 	gpio_direction_output(gpio43, 1);
 	udelay(500);
 #endif /* CONFIG_FB_MSM_MIPI_NOVATEK_CMD_WVGA_PT_PANEL */
+#endif
 }
 
 void pull_ldi_reset_down(void)
@@ -1483,8 +1484,8 @@ static struct msm_bus_scale_pdata mdp_bus_scale_pdata = {
 
 static struct msm_panel_common_pdata mdp_pdata = {
 	.gpio = MDP_VSYNC_GPIO,
-	.mdp_max_clk = 200000000,
-	.mdp_max_bw = 2000000000,
+	.mdp_max_clk = 266667000,
+	.mdp_max_bw = 7000000000u,
 	.mdp_bw_ab_factor = 230,
 	.mdp_bw_ib_factor = 250,
 #ifdef CONFIG_MSM_BUS_SCALING

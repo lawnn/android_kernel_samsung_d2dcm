@@ -613,4 +613,3 @@ config KEYBOARD_W90P910
 
 endif
 source "drivers/input/keyboard/cypress_touchkey_236/Kconfig"
-

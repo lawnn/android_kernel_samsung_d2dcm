@@ -88,3 +88,5 @@ out
 *.orig
 *~
 \#*#
+zip
+buildlean.sh

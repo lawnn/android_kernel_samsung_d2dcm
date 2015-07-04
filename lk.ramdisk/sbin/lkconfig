@@ -1,0 +1,71 @@
+#!/system/bin/sh
+BB="/system/xbin/busybox"
+SCRIPT="/system/etc/init.d/00leanKernel"
+
+echo
+echo "leanKernel configurator"
+echo
+echo "---"
+echo "1) interactiveX: set screen-off max freq to 1.1Ghz."
+echo "2) interactiveX: set screen-off max freq to 810Mhz (leanKernel default)."
+echo "3) Stop thermald (for running benchmarks)."
+echo "4) Restart mpdecision (when cpu1 gets stuck)."
+echo "5) Overlock 3D GPU to 480Mhz."
+echo "6) Reset 3D GPU to 400Mhz (leanKernel default)"
+#echo "7) Set display color temp to cold."
+#echo "8) Set display color temp to normal."
+#echo "9) Set display color temp to warm."
+echo 
+echo -n "Please enter a number between 1 and 6 (or press enter to exit): "
+
+read option
+
+mount -o rw,remount /system
+
+case $option in
+  1) 
+	$BB sed -i s/^SO_MAX=.*$/SO_MAX=1134000/ $SCRIPT
+	$SCRIPT
+	echo "interactiveX: screen off max freq set to 1134000."
+	;;
+  2) 
+	$BB sed -i s/^SO_MAX=.*$/SO_MAX=810000/ $SCRIPT
+	$SCRIPT
+	echo "interactiveX: screen off max freq set to 810000 (default)."
+	;;
+  3) 
+	stop thermald
+	echo "thermald stopped - reboot to get it back."
+	;;
+  4) 
+	$BB pkill -f mpdecision
+	echo "mpdecision restarted."
+	;;
+  5)
+        $BB sed -i s/^GPU=.*$/GPU=0/ $SCRIPT
+        $SCRIPT
+        echo "gpu OC'ed to 480mhz."
+	;;
+  6)
+        $BB sed -i s/^GPU=.*$/GPU=1/ $SCRIPT
+        $SCRIPT
+        echo "gpu OC removed."
+	;;
+  7)
+        $BB sed -i s/^COLOR=.*$/COLOR=0/ $SCRIPT
+        $SCRIPT
+        echo "Color temp is set to Cold - turn display off/on to take effect."
+        ;;
+  8)
+        $BB sed -i s/^COLOR=.*$/COLOR=2/ $SCRIPT
+        $SCRIPT
+        echo "Color temp is set to Normal - turn display off/on to take effect."
+        ;;
+  9)
+        $BB sed -i s/^COLOR=.*$/COLOR=4/ $SCRIPT
+        $SCRIPT
+        echo "Color temp is set to Warm - turn display off/on to take effect."
+        ;;
+esac
+mount -o ro,remount /system
+echo

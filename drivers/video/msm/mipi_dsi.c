@@ -158,8 +158,10 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	u32 hbp, hfp, vbp, vfp, hspw, vspw, width, height;
 	u32 ystride, bpp, data;
 	u32 dummy_xres, dummy_yres;
-	u32 tmp;
 	int target_type = 0;
+#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
+        u32 tmp_reg0c, tmp_rega8;
+#endif
 	int old_nice;
 
 	pr_debug("%s+:\n", __func__);
@@ -267,22 +269,31 @@ static int mipi_dsi_on(struct platform_device *pdev)
 
 	mipi_dsi_host_init(mipi);
 
-#if defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT)
-	/* LP11 */
-	tmp = MIPI_INP(MIPI_DSI_BASE + 0xA8);
-	tmp &= ~(1<<28);
-	MIPI_OUTP(MIPI_DSI_BASE + 0xA8, tmp);
+#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
+	mipi_dsi_pdata->lcd_rst_down();
+	/* backup register values */
+	tmp_reg0c = MIPI_INP(MIPI_DSI_BASE + 0x000c);
+	tmp_rega8 = MIPI_INP(MIPI_DSI_BASE + 0xA8);
+	/* Clear HS  mode assertion and related flags */
+	MIPI_OUTP(MIPI_DSI_BASE + 0x0c, 0x8000);
+	MIPI_OUTP(MIPI_DSI_BASE + 0xA8, 0x0);
 	wmb();
-	/* LP11 */
-
 	usleep(5000);
-	if (mipi_dsi_pdata && mipi_dsi_pdata->active_reset)
-			mipi_dsi_pdata->active_reset(); /* high */
-	usleep(10000);
-
+	mipi_dsi_pdata->lcd_rst_up();
+	usleep(5000);
+	mipi_dsi_pdata->lcd_rst_down();
+	usleep(5000);
+	mipi_dsi_pdata->lcd_rst_up();
+	/* restore previous values */
+	MIPI_OUTP(MIPI_DSI_BASE + 0x0c, tmp_reg0c);
+	MIPI_OUTP(MIPI_DSI_BASE + 0xa8, tmp_rega8);
+	wmb();
+	msleep(10);
 #endif
 
 	if (mipi->force_clk_lane_hs) {
+		u32 tmp;
+
 		tmp = MIPI_INP(MIPI_DSI_BASE + 0xA8);
 		tmp |= (1<<28);
 		MIPI_OUTP(MIPI_DSI_BASE + 0xA8, tmp);

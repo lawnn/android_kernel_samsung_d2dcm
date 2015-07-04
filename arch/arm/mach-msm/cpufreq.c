@@ -33,6 +33,19 @@
 
 #include "acpuclock.h"
 
+bool init_not_done = true;
+
+struct cpufreq_work_struct {
+	struct work_struct work;
+	struct cpufreq_policy *policy;
+	struct completion complete;
+	int frequency;
+	int status;
+};
+
+static DEFINE_PER_CPU(struct cpufreq_work_struct, cpufreq_work);
+static struct workqueue_struct *msm_cpufreq_wq;
+
 struct cpufreq_suspend_t {
 	struct mutex suspend_mutex;
 	int device_suspended;
@@ -69,6 +82,11 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 			new_freq = limit->allowed_min;
 			pr_debug("min: limiting freq to %d\n", new_freq);
 		}
+	}
+
+	if (new_freq > 1512000 && init_not_done) {
+	  pr_info("[imoseyon] set_cpu_freq: wants %d but denied.\n", new_freq);
+	  new_freq = 1512000;
 	}
 
 	freqs.old = policy->cur;
@@ -257,14 +275,16 @@ static int __cpuinit msm_cpufreq_init(struct cpufreq_policy *policy)
 	}
 
 	if (cur_freq != table[index].frequency) {
-		int ret = 0;
-		ret = acpuclk_set_rate(policy->cpu, table[index].frequency,
+		int newfreq, ret = 0;
+		if (table[index].frequency > 1512000) newfreq = 1512000;
+		else newfreq = table[index].frequency;
+		ret = acpuclk_set_rate(policy->cpu, newfreq,
 				SETRATE_CPUFREQ);
 		if (ret)
 			return ret;
 		pr_info("cpufreq: cpu%d init at %d switching to %d\n",
-				policy->cpu, cur_freq, table[index].frequency);
-		cur_freq = table[index].frequency;
+				policy->cpu, cur_freq, newfreq);
+		cur_freq = newfreq;
 	}
 
 	policy->cur = cur_freq;
